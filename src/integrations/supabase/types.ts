@@ -14,7 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          biometric_data: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          secret_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          biometric_data?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          secret_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          biometric_data?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          secret_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      secure_emails: {
+        Row: {
+          attachment_name: string | null
+          created_at: string
+          encrypted_attachment: string | null
+          encrypted_content: string
+          id: string
+          is_destroyed: boolean | null
+          recipient_email: string
+          sender_id: string
+          sender_secret_key: string
+          subject: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          created_at?: string
+          encrypted_attachment?: string | null
+          encrypted_content: string
+          id?: string
+          is_destroyed?: boolean | null
+          recipient_email: string
+          sender_id: string
+          sender_secret_key: string
+          subject: string
+        }
+        Update: {
+          attachment_name?: string | null
+          created_at?: string
+          encrypted_attachment?: string | null
+          encrypted_content?: string
+          id?: string
+          is_destroyed?: boolean | null
+          recipient_email?: string
+          sender_id?: string
+          sender_secret_key?: string
+          subject?: string
+        }
+        Relationships: []
+      }
+      security_logs: {
+        Row: {
+          attempt_count: number | null
+          attempt_type: string
+          created_at: string
+          email_id: string
+          id: string
+          ip_address: string | null
+          recipient_email: string
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          attempt_count?: number | null
+          attempt_type: string
+          created_at?: string
+          email_id: string
+          id?: string
+          ip_address?: string | null
+          recipient_email: string
+          success: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          attempt_count?: number | null
+          attempt_type?: string
+          created_at?: string
+          email_id?: string
+          id?: string
+          ip_address?: string | null
+          recipient_email?: string
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_logs_email_id_fkey"
+            columns: ["email_id"]
+            isOneToOne: false
+            referencedRelation: "secure_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

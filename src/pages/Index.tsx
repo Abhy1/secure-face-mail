@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '@/components/AuthContext';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { SignupScreen } from '@/components/SignupScreen';
+import { LoginScreen } from '@/components/LoginScreen';
 import { KeyGeneration } from '@/components/KeyGeneration';
 import { BiometricCapture } from '@/components/BiometricCapture';
 import { Dashboard } from '@/components/Dashboard';
@@ -10,7 +11,7 @@ import { Inbox } from '@/components/Inbox';
 import { EmailDecryption } from '@/components/EmailDecryption';
 import { SuccessScreen } from '@/components/SuccessScreen';
 
-type Screen = 'welcome' | 'signup' | 'keyGeneration' | 'biometric' | 'dashboard' | 'compose' | 'inbox' | 'decrypt' | 'success';
+type Screen = 'welcome' | 'login' | 'signup' | 'keyGeneration' | 'biometric' | 'dashboard' | 'compose' | 'inbox' | 'decrypt' | 'success';
 
 const SecureMailApp = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
@@ -36,10 +37,28 @@ const SecureMailApp = () => {
   const renderScreen = () => {
     switch (currentScreen) {
       case 'welcome':
-        return <WelcomeScreen onGetStarted={() => setCurrentScreen('signup')} />;
+        return (
+          <WelcomeScreen 
+            onLogin={() => setCurrentScreen('login')}
+            onSignup={() => setCurrentScreen('signup')} 
+          />
+        );
+      
+      case 'login':
+        return (
+          <LoginScreen 
+            onLoginSuccess={() => setCurrentScreen('dashboard')}
+            onSignupRedirect={() => setCurrentScreen('signup')}
+          />
+        );
       
       case 'signup':
-        return <SignupScreen onSignupComplete={() => setCurrentScreen('keyGeneration')} />;
+        return (
+          <SignupScreen 
+            onSignupComplete={() => setCurrentScreen('keyGeneration')}
+            onLoginRedirect={() => setCurrentScreen('login')}
+          />
+        );
       
       case 'keyGeneration':
         return (
@@ -93,7 +112,12 @@ const SecureMailApp = () => {
         return <SuccessScreen onReturn={() => setCurrentScreen('dashboard')} />;
       
       default:
-        return <WelcomeScreen onGetStarted={() => setCurrentScreen('signup')} />;
+        return (
+          <WelcomeScreen 
+            onLogin={() => setCurrentScreen('login')}
+            onSignup={() => setCurrentScreen('signup')} 
+          />
+        );
     }
   };
 

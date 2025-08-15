@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from '@/components/AuthContext';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { SignupScreen } from '@/components/SignupScreen';
 import { LoginScreen } from '@/components/LoginScreen';
+import { OTPVerification } from '@/components/OTPVerification';
 import { KeyGeneration } from '@/components/KeyGeneration';
 import { BiometricCapture } from '@/components/BiometricCapture';
 import { Dashboard } from '@/components/Dashboard';
@@ -11,12 +12,13 @@ import { Inbox } from '@/components/Inbox';
 import { EmailDecryption } from '@/components/EmailDecryption';
 import { SuccessScreen } from '@/components/SuccessScreen';
 
-type Screen = 'welcome' | 'login' | 'signup' | 'keyGeneration' | 'biometric' | 'dashboard' | 'compose' | 'inbox' | 'decrypt' | 'success';
+type Screen = 'welcome' | 'login' | 'signup' | 'otp' | 'keyGeneration' | 'biometric' | 'dashboard' | 'compose' | 'inbox' | 'decrypt' | 'success';
 
 const SecureMailApp = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [selectedEmailId, setSelectedEmailId] = useState<string>('');
   const [secretKey, setSecretKey] = useState<string>('');
+  const [pendingSignup, setPendingSignup] = useState<{email: string, fullName: string, password: string} | null>(null);
   const { user, loading } = useAuth();
 
   // Show dashboard if user is authenticated
@@ -55,10 +57,24 @@ const SecureMailApp = () => {
       case 'signup':
         return (
           <SignupScreen 
-            onSignupComplete={() => setCurrentScreen('keyGeneration')}
+            onOTPRequired={(email, fullName, password) => {
+              setPendingSignup({email, fullName, password});
+              setCurrentScreen('otp');
+            }}
             onLoginRedirect={() => setCurrentScreen('login')}
           />
         );
+      
+      case 'otp':
+        return pendingSignup ? (
+          <OTPVerification 
+            email={pendingSignup.email}
+            fullName={pendingSignup.fullName}
+            password={pendingSignup.password}
+            onVerificationSuccess={() => setCurrentScreen('keyGeneration')}
+            onBack={() => setCurrentScreen('signup')}
+          />
+        ) : null;
       
       case 'keyGeneration':
         return (

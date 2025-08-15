@@ -2,40 +2,58 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from './AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface SignupScreenProps {
-  onSignupComplete: () => void;
+  onOTPRequired: (email: string, fullName: string, password: string) => void;
   onLoginRedirect: () => void;
 }
 
-export const SignupScreen = ({ onSignupComplete, onLoginRedirect }: SignupScreenProps) => {
+export const SignupScreen = ({ onOTPRequired, onLoginRedirect }: SignupScreenProps) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signUp(email, password, fullName);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: {
+          email,
+          type: 'signup'
+        }
+      });
 
-    if (error) {
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else if (data?.error) {
+        toast({
+          title: "Error",
+          description: data.error,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Verification Code Sent",
+          description: "Please check your email for the verification code."
+        });
+        onOTPRequired(email, fullName, password);
+      }
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to send verification code. Please try again.",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Account Created!",
-        description: "Please check your email to verify your account."
-      });
-      onSignupComplete();
     }
 
     setLoading(false);
@@ -79,8 +97,8 @@ export const SignupScreen = ({ onSignupComplete, onLoginRedirect }: SignupScreen
               className="mt-2"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+          <Button type="submit" className="w-full" disabled={loading || !fullName || !email || !password}>
+            {loading ? 'Sending Code...' : 'Send Verification Code'}
           </Button>
         </form>
         

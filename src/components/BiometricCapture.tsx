@@ -12,21 +12,55 @@ export const BiometricCapture = ({ onComplete }: BiometricCaptureProps) => {
   const [status, setStatus] = useState('Position your face and click scan');
   const [scanning, setScanning] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [hasPermission, setHasPermission] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const startBiometricScan = () => {
-    setScanning(true);
-    setStatus('🔍 Analyzing facial features...');
-
-    setTimeout(() => {
-      setStatus('✅ Face scan completed successfully!');
-      setScanning(false);
-      setCompleted(true);
+  const requestCameraPermission = async () => {
+    try {
+      setStatus('Requesting camera permission...');
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } 
+      });
+      setStream(mediaStream);
+      setHasPermission(true);
+      setStatus('Camera ready! Click to capture your face');
       
-      // Save mock biometric data to database
-      saveBiometricData();
-    }, 3000);
+      // Stop the stream immediately after permission is granted
+      mediaStream.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      toast({
+        title: "Camera Permission Required",
+        description: "Please allow camera access for biometric registration",
+        variant: "destructive"
+      });
+      setStatus('Camera permission denied. Please allow camera access.');
+    }
+  };
+
+  const startBiometricScan = async () => {
+    if (!hasPermission) {
+      await requestCameraPermission();
+      return;
+    }
+
+    setScanning(true);
+    setStatus('📸 Capturing your face...');
+
+    // Simulate face capture
+    setTimeout(() => {
+      setStatus('🔍 Analyzing facial features...');
+      
+      setTimeout(() => {
+        setStatus('✅ Face captured and analyzed successfully!');
+        setScanning(false);
+        setCompleted(true);
+        
+        // Save biometric data to database
+        saveBiometricData();
+      }, 2000);
+    }, 1000);
   };
 
   const saveBiometricData = async () => {

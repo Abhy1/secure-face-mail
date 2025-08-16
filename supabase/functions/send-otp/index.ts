@@ -1,8 +1,7 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,6 +28,22 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, type }: SendOTPRequest = await req.json();
 
+    // Check if RESEND_API_KEY is available
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY environment variable is not set');
+      return new Response(
+        JSON.stringify({ error: 'Email service not configured' }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log('RESEND_API_KEY is available, initializing Resend...');
+    const resend = new Resend(resendApiKey);
+
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
@@ -50,6 +65,8 @@ const handler = async (req: Request): Promise<Response> => {
       console.error('Database error:', dbError);
       throw new Error('Failed to store OTP');
     }
+
+    console.log(`Sending OTP ${otp} to ${email}...`);
 
     // Send OTP email
     const emailResponse = await resend.emails.send({
@@ -75,6 +92,19 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       `,
     });
+
+    console.log("Email response:", emailResponse);
+
+    if (emailResponse.error) {
+      console.error("Resend API error:", emailResponse.error);
+      return new Response(
+        JSON.stringify({ error: `Failed to send email: ${emailResponse.error.message}` }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
     console.log("OTP email sent successfully:", emailResponse);
 

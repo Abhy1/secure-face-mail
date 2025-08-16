@@ -6,9 +6,10 @@ import { useAuth } from './AuthContext';
 interface DashboardProps {
   onCompose: () => void;
   onInbox: () => void;
+  onVerifications?: () => void;
 }
 
-export const Dashboard = ({ onCompose, onInbox }: DashboardProps) => {
+export const Dashboard = ({ onCompose, onInbox, onVerifications }: DashboardProps) => {
   const [secretKey, setSecretKey] = useState('Loading...');
   const { user, signOut } = useAuth();
 
@@ -45,6 +46,11 @@ export const Dashboard = ({ onCompose, onInbox }: DashboardProps) => {
               <Button onClick={onInbox} variant="secondary" className="flex items-center gap-2">
                 📥 Inbox
               </Button>
+              {onVerifications && (
+                <Button onClick={onVerifications} variant="outline" className="flex items-center gap-2">
+                  🔐 Verifications
+                </Button>
+              )}
               <Button onClick={signOut} variant="outline" size="sm">
                 Sign Out
               </Button>

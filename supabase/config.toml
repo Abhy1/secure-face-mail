@@ -25,6 +25,9 @@ verify_jwt = false
 [functions.verify-otp]
 verify_jwt = false
 
+[functions.send-verification-notification]
+verify_jwt = false
+
 [studio]
 enabled = true
 port = 54323

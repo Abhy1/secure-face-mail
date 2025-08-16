@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { AttachmentVerification } from './AttachmentVerification';
 
 interface EmailDecryptionProps {
   emailId: string;
@@ -29,6 +30,8 @@ export const EmailDecryption = ({ emailId, onBack }: EmailDecryptionProps) => {
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [securityAlert, setSecurityAlert] = useState('');
   const [verificationStatus, setVerificationStatus] = useState('Ready for verification');
+  const [showAttachmentVerification, setShowAttachmentVerification] = useState(false);
+  const [attachmentApproved, setAttachmentApproved] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -192,13 +195,48 @@ export const EmailDecryption = ({ emailId, onBack }: EmailDecryptionProps) => {
                   <h5 className="text-foreground font-bold">Subject: {email.subject}</h5>
                   <p className="text-muted-foreground text-sm mb-3">From: {email.sender_id}</p>
                   <p className="text-foreground">{decryptedContent}</p>
-                  {email.attachment_name && (
+                  
+                  {email.attachment_name && !showAttachmentVerification && !attachmentApproved && (
+                    <Button 
+                      className="mt-3" 
+                      size="sm"
+                      onClick={() => setShowAttachmentVerification(true)}
+                    >
+                      📎 Access {email.attachment_name}
+                    </Button>
+                  )}
+                  
+                  {email.attachment_name && attachmentApproved && (
                     <Button className="mt-3" size="sm">
                       📎 Download {email.attachment_name}
                     </Button>
                   )}
                 </div>
               </div>
+            )}
+            
+            {showAttachmentVerification && !attachmentApproved && (
+              <AttachmentVerification
+                emailId={emailId}
+                senderId={email.sender_id}
+                attachmentName={email.attachment_name || ''}
+                onVerificationComplete={(approved) => {
+                  setAttachmentApproved(approved);
+                  setShowAttachmentVerification(false);
+                  if (approved) {
+                    toast({
+                      title: "Access Granted",
+                      description: "Sender approved your identity. You can now access the attachment."
+                    });
+                  } else {
+                    toast({
+                      title: "Access Denied",
+                      description: "Sender denied verification. Attachment access blocked.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              />
             )}
             
             {securityAlert && (

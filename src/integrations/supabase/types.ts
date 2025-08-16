@@ -160,6 +160,47 @@ export type Database = {
           },
         ]
       }
+      verification_requests: {
+        Row: {
+          created_at: string
+          email_id: string
+          expires_at: string
+          id: string
+          receiver_id: string
+          receiver_photo_data: string | null
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email_id: string
+          expires_at?: string
+          id?: string
+          receiver_id: string
+          receiver_photo_data?: string | null
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email_id?: string
+          expires_at?: string
+          id?: string
+          receiver_id?: string
+          receiver_photo_data?: string | null
+          sender_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_requests_email_id_fkey"
+            columns: ["email_id"]
+            isOneToOne: false
+            referencedRelation: "secure_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

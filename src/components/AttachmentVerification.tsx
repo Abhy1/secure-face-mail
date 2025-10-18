@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
@@ -11,17 +11,29 @@ interface AttachmentVerificationProps {
   onVerificationComplete: (approved: boolean) => void;
 }
 
-export const AttachmentVerification = ({ 
-  emailId, 
-  senderId, 
+export const AttachmentVerification = ({
+  emailId,
+  senderId,
   attachmentName,
-  onVerificationComplete 
+  onVerificationComplete
 }: AttachmentVerificationProps) => {
   const [capturing, setCapturing] = useState(false);
   const [photoTaken, setPhotoTaken] = useState(false);
   const [awaitingApproval, setAwaitingApproval] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [verificationId, setVerificationId] = useState<string>('');
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   const capturePhoto = async () => {
     try {

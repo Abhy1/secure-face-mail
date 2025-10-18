@@ -7,9 +7,10 @@ interface DashboardProps {
   onCompose: () => void;
   onInbox: () => void;
   onVerifications?: () => void;
+  onReceivedEmails?: () => void;
 }
 
-export const Dashboard = ({ onCompose, onInbox, onVerifications }: DashboardProps) => {
+export const Dashboard = ({ onCompose, onInbox, onVerifications, onReceivedEmails }: DashboardProps) => {
   const [secretKey, setSecretKey] = useState('Loading...');
   const { user, signOut } = useAuth();
 
@@ -39,13 +40,18 @@ export const Dashboard = ({ onCompose, onInbox, onVerifications }: DashboardProp
         <div className="glass-card rounded-3xl p-8 mb-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-foreground">SecureMail Dashboard</h1>
-            <div className="flex space-x-4">
+            <div className="flex flex-wrap gap-3">
               <Button onClick={onCompose} className="flex items-center gap-2">
-                📧 Compose Secure Email
+                📧 Compose Email
               </Button>
               <Button onClick={onInbox} variant="secondary" className="flex items-center gap-2">
-                📥 Inbox
+                📤 Sent Emails
               </Button>
+              {onReceivedEmails && (
+                <Button onClick={onReceivedEmails} variant="secondary" className="flex items-center gap-2">
+                  📥 Received Emails
+                </Button>
+              )}
               {onVerifications && (
                 <Button onClick={onVerifications} variant="outline" className="flex items-center gap-2">
                   🔐 Verifications

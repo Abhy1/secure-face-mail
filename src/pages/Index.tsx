@@ -9,10 +9,11 @@ import { BiometricCapture } from '@/components/BiometricCapture';
 import { Dashboard } from '@/components/Dashboard';
 import { ComposeEmail } from '@/components/ComposeEmail';
 import { Inbox } from '@/components/Inbox';
+import { ReceivedEmails } from '@/components/ReceivedEmails';
 import { EmailDecryption } from '@/components/EmailDecryption';
 import { SuccessScreen } from '@/components/SuccessScreen';
 
-type Screen = 'welcome' | 'login' | 'signup' | 'otp' | 'keyGeneration' | 'biometric' | 'dashboard' | 'compose' | 'inbox' | 'decrypt' | 'success';
+type Screen = 'welcome' | 'login' | 'signup' | 'otp' | 'keyGeneration' | 'biometric' | 'dashboard' | 'compose' | 'inbox' | 'received' | 'decrypt' | 'success';
 
 const SecureMailApp = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
@@ -94,6 +95,7 @@ const SecureMailApp = () => {
           <Dashboard 
             onCompose={() => setCurrentScreen('compose')}
             onInbox={() => setCurrentScreen('inbox')}
+            onReceivedEmails={() => setCurrentScreen('received')}
           />
         );
       
@@ -108,6 +110,17 @@ const SecureMailApp = () => {
       case 'inbox':
         return (
           <Inbox 
+            onBack={() => setCurrentScreen('dashboard')}
+            onDecrypt={(emailId) => {
+              setSelectedEmailId(emailId);
+              setCurrentScreen('decrypt');
+            }}
+          />
+        );
+
+      case 'received':
+        return (
+          <ReceivedEmails 
             onBack={() => setCurrentScreen('dashboard')}
             onDecrypt={(emailId) => {
               setSelectedEmailId(emailId);

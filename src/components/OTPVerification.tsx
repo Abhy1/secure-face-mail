@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { otpSchema } from '@/lib/validation';
+import { useAuth } from './AuthContext';
 
 interface OTPVerificationProps {
   email: string;
@@ -19,6 +20,7 @@ export const OTPVerification = ({ email, fullName, password, onVerificationSucce
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const { toast } = useToast();
+  const { signIn } = useAuth();
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,10 +63,21 @@ export const OTPVerification = ({ email, fullName, password, onVerificationSucce
           variant: "destructive"
         });
       } else {
-        toast({
-          title: "Account Created!",
-          description: "Your account has been created successfully."
-        });
+        // Account created successfully, now sign in automatically
+        const { error: signInError } = await signIn(email.trim().toLowerCase(), password);
+        
+        if (signInError) {
+          toast({
+            title: "Account Created",
+            description: "Please login with your credentials.",
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Welcome!",
+            description: "Your account has been created and you're now logged in."
+          });
+        }
         onVerificationSuccess();
       }
     } catch (error: any) {

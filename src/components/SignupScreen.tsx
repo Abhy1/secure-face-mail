@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { signupSchema } from '@/lib/validation';
 
 interface SignupScreenProps {
   onOTPRequired: (email: string, fullName: string, password: string) => void;
@@ -19,12 +20,25 @@ export const SignupScreen = ({ onOTPRequired, onLoginRedirect }: SignupScreenPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    const validation = signupSchema.safeParse({ fullName, email, password });
+    
+    if (!validation.success) {
+      toast({
+        title: "Validation Error",
+        description: validation.error.issues[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('send-otp', {
         body: {
-          email,
+          email: email.trim().toLowerCase(),
           type: 'signup'
         }
       });
@@ -46,17 +60,18 @@ export const SignupScreen = ({ onOTPRequired, onLoginRedirect }: SignupScreenPro
           title: "Verification Code Sent",
           description: "Please check your email for the verification code."
         });
-        onOTPRequired(email, fullName, password);
+        onOTPRequired(email.trim().toLowerCase(), fullName.trim(), password);
       }
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast({
         title: "Error",
         description: "Failed to send verification code. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

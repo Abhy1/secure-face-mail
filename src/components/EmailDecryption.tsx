@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { AttachmentVerification } from './AttachmentVerification';
+import { decryptData } from '@/lib/encryption';
 
 interface EmailDecryptionProps {
   emailId: string;
@@ -52,30 +53,42 @@ export const EmailDecryption = ({ emailId, onBack }: EmailDecryptionProps) => {
   };
 
   const verifyKey = async () => {
-    if (!email) return;
+    if (!email || !user) return;
 
-    // Log security attempt
-    await supabase.from('security_logs').insert({
-      email_id: emailId,
-      recipient_email: user?.email || '',
-      attempt_type: 'key_verification',
-      success: decryptionKey === email.sender_secret_key,
-      user_agent: navigator.userAgent,
-      ip_address: 'demo_ip'
-    });
-
-    if (decryptionKey === email.sender_secret_key) {
+    try {
+      // Try to decrypt content with the provided key
+      const content = decryptData(email.encrypted_content, decryptionKey);
+      
+      // If decryption succeeds, key is valid
+      setDecryptedContent(content);
       setKeyVerified(true);
       setVerificationStatus('Key verified! Proceed with face verification.');
-      
-      // Decrypt content
-      try {
-        const content = atob(email.encrypted_content);
-        setDecryptedContent(content);
-      } catch (error) {
-        console.error('Decryption failed:', error);
-      }
-    } else {
+
+      // Log successful security attempt
+      await supabase.from('security_logs').insert({
+        email_id: emailId,
+        recipient_email: user.email || '',
+        attempt_type: 'key_verification',
+        success: true,
+        user_agent: navigator.userAgent,
+        ip_address: 'client'
+      });
+
+      toast({
+        title: "Key Verified",
+        description: "Content decrypted successfully. Proceed with biometric verification.",
+      });
+    } catch (error) {
+      // Log failed security attempt
+      await supabase.from('security_logs').insert({
+        email_id: emailId,
+        recipient_email: user.email || '',
+        attempt_type: 'key_verification',
+        success: false,
+        user_agent: navigator.userAgent,
+        ip_address: 'client'
+      });
+
       toast({
         title: "Invalid Key",
         description: "The secret key is incorrect. Please check with the sender.",

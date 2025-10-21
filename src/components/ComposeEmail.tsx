@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { encryptData } from '@/lib/encryption';
+import { emailSchema } from '@/lib/validation';
 
 interface ComposeEmailProps {
   onBack: () => void;
@@ -25,31 +27,56 @@ export const ComposeEmail = ({ onBack, onSent }: ComposeEmailProps) => {
     e.preventDefault();
     if (!user) return;
 
+    // Validate inputs
+    const validation = emailSchema.safeParse({
+      recipient,
+      subject,
+      message,
+    });
+
+    if (!validation.success) {
+      toast({
+        title: "Validation Error",
+        description: validation.error.issues[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       // Get user's secret key
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('secret_key')
         .eq('user_id', user.id)
         .single();
 
-      if (!profile?.secret_key) {
-        throw new Error('Secret key not found');
+      if (profileError || !profile?.secret_key) {
+        throw new Error('Secret key not found. Please log out and log in again.');
       }
 
-      // Mock encryption (in real app, use proper encryption)
-      const encryptedContent = btoa(message); // Base64 encoding for demo
-      const encryptedAttachment = attachment ? btoa(await attachment.text()) : null;
+      // Real AES encryption
+      const encryptedContent = encryptData(message, profile.secret_key);
+      
+      let encryptedAttachment = null;
+      if (attachment) {
+        // Validate file size (10MB max)
+        if (attachment.size > 10 * 1024 * 1024) {
+          throw new Error('File too large. Maximum size is 10MB.');
+        }
+        const fileContent = await attachment.text();
+        encryptedAttachment = encryptData(fileContent, profile.secret_key);
+      }
 
       // Save email to database
       const { error } = await supabase
         .from('secure_emails')
         .insert({
           sender_id: user.id,
-          recipient_email: recipient,
-          subject,
+          recipient_email: recipient.toLowerCase().trim(),
+          subject: subject.trim(),
           encrypted_content: encryptedContent,
           encrypted_attachment: encryptedAttachment,
           attachment_name: attachment?.name || null,
@@ -63,16 +90,23 @@ export const ComposeEmail = ({ onBack, onSent }: ComposeEmailProps) => {
         description: "Your secure email has been encrypted and sent."
       });
 
+      // Clear form
+      setRecipient('');
+      setSubject('');
+      setMessage('');
+      setAttachment(null);
+      
       onSent();
     } catch (error: any) {
+      console.error('Email send error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || 'Failed to send email',
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

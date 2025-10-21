@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { loginSchema } from '@/lib/validation';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -19,9 +20,22 @@ export const LoginScreen = ({ onLoginSuccess, onSignupRedirect }: LoginScreenPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    const validation = loginSchema.safeParse({ email, password });
+    
+    if (!validation.success) {
+      toast({
+        title: "Validation Error",
+        description: validation.error.issues[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(email.trim().toLowerCase(), password);
 
     if (error) {
       toast({

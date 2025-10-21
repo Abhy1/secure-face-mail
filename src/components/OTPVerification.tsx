@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { otpSchema } from '@/lib/validation';
 
 interface OTPVerificationProps {
   email: string;
@@ -21,14 +22,27 @@ export const OTPVerification = ({ email, fullName, password, onVerificationSucce
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    const validation = otpSchema.safeParse({ email, otp });
+    
+    if (!validation.success) {
+      toast({
+        title: "Validation Error",
+        description: validation.error.issues[0].message,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('verify-otp', {
         body: {
-          email,
-          otp,
-          fullName,
+          email: email.trim().toLowerCase(),
+          otp: otp.trim(),
+          fullName: fullName.trim(),
           password,
           type: 'signup'
         }
@@ -54,14 +68,15 @@ export const OTPVerification = ({ email, fullName, password, onVerificationSucce
         onVerificationSuccess();
       }
     } catch (error: any) {
+      console.error('OTP verification error:', error);
       toast({
         title: "Error",
         description: "Failed to verify OTP. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleResendOTP = async () => {

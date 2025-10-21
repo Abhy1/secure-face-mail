@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { generateSecretKey } from '@/lib/encryption';
 
 interface KeyGenerationProps {
   onComplete: (secretKey: string) => void;
@@ -15,16 +16,6 @@ export const KeyGeneration = ({ onComplete }: KeyGenerationProps) => {
   const [showKey, setShowKey] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-
-  const generateMockKey = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let key = '';
-    for (let i = 0; i < 32; i++) {
-      key += chars.charAt(Math.floor(Math.random() * chars.length));
-      if ((i + 1) % 8 === 0 && i < 31) key += '-';
-    }
-    return key;
-  };
 
   useEffect(() => {
     if (!user) return;
@@ -43,7 +34,7 @@ export const KeyGeneration = ({ onComplete }: KeyGenerationProps) => {
           } else if (newProgress === 100) {
             setStatus('Key generation complete!');
             
-            const generatedKey = generateMockKey();
+            const generatedKey = generateSecretKey();
             setSecretKey(generatedKey);
             
             // Save key to database

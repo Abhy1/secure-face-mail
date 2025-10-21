@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { generateSecretKey } from '@/lib/encryption';
 
 interface AuthContextType {
   user: User | null;
@@ -62,30 +63,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const generateSecretKey = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let key = '';
-    for (let i = 0; i < 32; i++) {
-      key += chars.charAt(Math.floor(Math.random() * chars.length));
-      if ((i + 1) % 8 === 0 && i < 31) key += '-';
-    }
-    return key;
-  };
-
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
-    
-    // Generate new secret key on each login
-    if (!error) {
-      const newSecretKey = generateSecretKey();
-      await supabase
-        .from('profiles')
-        .update({ secret_key: newSecretKey })
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-    }
     
     return { error };
   };
